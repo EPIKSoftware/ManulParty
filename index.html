@@ -25,7 +25,7 @@
     </style>
 </head>
 <body>
-    <img src="MP2.svg" id="logo" alt="ManulParty Logo">
+    <img src="MP.svg" id="logo" alt="ManulParty Logo">
     <div id="crosshair"></div>
     <div id="info">
         WASD = MOVE | SPACE = JUMP | P = LOAD PROJECT<br>
@@ -58,6 +58,9 @@
         const controls = new PointerLockControls(camera, document.body);
         const collidableObjects = []; 
         let temporaryBlocks = [];
+        
+        const defaultSpawn = new THREE.Vector3(0, 5, 15);
+        let activeSpawn = defaultSpawn.clone();
 
         const playerRadius = 0.6;
         const playerHeight = 1.7;
@@ -85,20 +88,29 @@
         async function parseMobj(file, path) {
             const text = await file.text();
             const lines = text.split('\n').map(l => l.trim());
-            if (lines[0] !== "ManulParty:Part") return;
+            
+            if (lines[0] === "ManulParty:Part") {
+                const posX = parseFloat(lines[1]) || 0;
+                const posY = parseFloat(lines[2]) || 0;
+                const posZ = parseFloat(lines[3]) || 0;
+                const s1 = [parseFloat(lines[4])||1, parseFloat(lines[5])||1, parseFloat(lines[6])||1];
+                const s2 = [parseFloat(lines[7])||1, parseFloat(lines[8])||1, parseFloat(lines[9])||1];
 
-            const posX = parseFloat(lines[1]) || 0;
-            const posY = parseFloat(lines[2]) || 0;
-            const posZ = parseFloat(lines[3]) || 0;
-            const s1 = [parseFloat(lines[4])||1, parseFloat(lines[5])||1, parseFloat(lines[6])||1];
-            const s2 = [parseFloat(lines[7])||1, parseFloat(lines[8])||1, parseFloat(lines[9])||1];
-
-            const geometry = new THREE.BoxGeometry(s1[0]*s2[0], s1[1]*s2[1], s1[2]*s2[2]);
-            const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x888888 }));
-            mesh.position.set(posX, posY, posZ);
-            mesh.updateMatrixWorld();
-            scene.add(mesh);
-            collidableObjects.push(mesh);
+                const geometry = new THREE.BoxGeometry(s1[0]*s2[0], s1[1]*s2[1], s1[2]*s2[2]);
+                const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color: 0x888888 }));
+                mesh.position.set(posX, posY, posZ);
+                mesh.updateMatrixWorld();
+                scene.add(mesh);
+                collidableObjects.push(mesh);
+            } 
+            else if (lines[0] === "ManulParty:Spawn") {
+                const sX = parseFloat(lines[1]) || 0;
+                const sY = parseFloat(lines[2]) || 0;
+                const sZ = parseFloat(lines[3]) || 0;
+                activeSpawn.set(sX, sY, sZ);
+                camera.position.copy(activeSpawn);
+                console.log("New Spawn Set:", sX, sY, sZ);
+            }
         }
 
         const folderInput = document.getElementById('folderInput');
@@ -112,6 +124,8 @@
                 if(idx > -1) collidableObjects.splice(idx, 1); 
             });
             temporaryBlocks = [];
+            
+            activeSpawn.copy(defaultSpawn);
             document.getElementById('status').innerText = "Mode: Project";
             
             const configFile = files.find(f => f.name.toLowerCase() === "config" || f.name.toLowerCase() === "config.txt");
@@ -158,7 +172,7 @@
         collidableObjects.push(ground);
 
         generateRandomBlocks();
-        camera.position.set(0, 5, 15);
+        camera.position.copy(activeSpawn);
 
         document.addEventListener("keydown", (e) => {
             keys[e.code] = true;
@@ -209,7 +223,7 @@
                     canJump = false;
                 }
 
-                if(camera.position.y < -15) camera.position.set(0, 5, 15);
+                if(camera.position.y < -20) camera.position.copy(activeSpawn);
             }
             renderer.render(scene, camera);
         }
