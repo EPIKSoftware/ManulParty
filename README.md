@@ -32,3 +32,13 @@ ManulParty:Part
 1
 1
 ```
+## Spawn Point
+Spawn Points Are Objects In ManulParty That Change The Default Spawn Point To Make It Make A Folder In The Directory "space" In It Make A File Called "main.mobj"
+The First Line Is ManulParty:Spawn The Second Is The X Position, The Third Line Is The Y Position And The Fourth Line Is The Z Position
+Example
+```
+ManulParty:Spawn
+10
+5
+-20
+```
